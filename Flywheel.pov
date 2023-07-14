@@ -63,27 +63,22 @@ union{
         cylinder{1*y,1.2*y,1.5}
         cone{1.2*y,1.3,2.3*y,.35}
         cylinder{2.3*y,2.5*y,.3}
-        #declare i=1;
-        #while(i<6)
+        #for (i,1,5)
                 prism{-.01,.01,5
                         <.35,0>,<.35,2.3>,<1.5,1.2>,<4,.5>,<.35,0>
                         rotate -90*x
                         rotate 72*i*y}
-                #declare i = i+1;
         #end
-        #declare i=1;
-        #while(i<16)
+        #for (i,1,15)
                 cylinder{<1.4,1.1,0>,<1.4,1.21,0>.04
                         pigment{Black}
                         rotate (12+24*i)*y}
                 #declare i = i+1;
         #end
-        #declare i=1;
-        #while(i<31)
+        #for (i,1,30)
                 cylinder{<3.91,.4,0>,<3.91,.51,0>.04
                         pigment{Black}
                         rotate (6+12*i)*y}
-                #declare i = i+1;
         #end
 }
 

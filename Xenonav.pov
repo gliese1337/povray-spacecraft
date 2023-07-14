@@ -17,10 +17,10 @@ camera {
    orthographic
    //location <60,10,0>
    //location <60, 10, -115>
-   location <20, -20, -30>	// Camera location
+   location <50, 20, -30>*2.5	// Camera location
    //location <-50,0,0>
    //location <150,10,-90>
-   look_at <60,0,0>		// simple command for camera direction
+   look_at <70,0,0>		// simple command for camera direction
 }
     
 /*light_source {			// point light source

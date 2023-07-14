@@ -11,7 +11,7 @@ background{Black}
 global_settings{ambient_light White*3}
 
 camera {
-   location <5, 20, -20>
+   location <5, 20, -20>*2
    look_at 0		// simple command for camera direction
 }
     

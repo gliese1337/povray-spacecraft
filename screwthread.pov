@@ -1,4 +1,4 @@
-                                                      #include "colors.inc"
+#include "colors.inc"
 #include "textures.inc"
 #include "metals.inc"
 #include "SHAPES.INC."
@@ -79,11 +79,9 @@ difference{
 
 #declare screw=
 union{
-#declare i=0;
-#while(i<100)
+#for (i,0,300)
         object{screwthread rotate i*360/res*y translate i*4*tr/res*y}
         object{screwgroove translate .2*y rotate i*360/res*y translate i*4*tr/res*y}
-        #declare i=i+1;
 #end  
 }
 

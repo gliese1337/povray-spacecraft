@@ -18,7 +18,8 @@ camera {
    //location <0,0,-70>
    //location <20, 20, 0>	// Camera location
    //location <-50,0,0>
-   location <-10,0,-10>		// simple command for camera direction
+   location <50,-20,20>		// simple command for camera direction
+   look_at 0
 }
     
 /*light_source {			// point light source

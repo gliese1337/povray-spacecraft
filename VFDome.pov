@@ -123,41 +123,9 @@ box{<97,0,-.5>,<100,1.5,-1>
         finish {ambient 0 diffuse 2 specular 0.1 roughness 1}
         }
 }
-object{notch1}
-object{notch1 rotate 10*y}
-object{notch1 rotate 20*y}
-object{notch1 rotate 30*y}
-object{notch1 rotate 40*y}
-object{notch1 rotate 50*y}
-object{notch1 rotate 60*y}
-object{notch1 rotate 70*y}
-object{notch1 rotate 80*y}
-object{notch1 rotate 100*y}
-object{notch1 rotate 110*y}
-object{notch1 rotate 120*y}
-object{notch1 rotate 130*y}
-object{notch1 rotate 140*y}
-object{notch1 rotate 150*y}
-object{notch1 rotate 160*y}
-object{notch1 rotate 170*y}
-object{notch1 rotate 180*y}
-object{notch1 rotate 190*y}
-object{notch1 rotate 200*y}
-object{notch1 rotate 210*y}
-object{notch1 rotate 220*y}
-object{notch1 rotate 230*y}
-object{notch1 rotate 240*y}
-object{notch1 rotate 250*y}
-object{notch1 rotate 260*y}
-object{notch1 rotate 270*y}
-object{notch1 rotate 280*y}
-object{notch1 rotate 290*y}
-object{notch1 rotate 300*y}
-object{notch1 rotate 310*y}
-object{notch1 rotate 320*y}
-object{notch1 rotate 330*y}
-object{notch1 rotate 340*y}
-object{notch1 rotate 350*y}
+#for (i,0,35)
+object{notch1 rotate 10*i*y }
+#end
 
 cone{<0,-2,0>,100,<0,-3.5,0>,90
         pigment {Grey}

@@ -10,7 +10,7 @@ global_settings{ assumed_gamma 1.3 max_trace_level 5}
 
 camera {  
   //orthographic
-  location <1,2,3>
+  location <1,2,3>*2.2
   angle 0 // direction 2*z 
   right     x*image_width/image_height // keep proportions with any aspect ratio
   look_at   0
@@ -24,8 +24,8 @@ light_source { < 140,200,-300> rgb <0.9, 0.9, 1.00>*0.9 shadowless }
   linear_spline
   -0.05, // sweep the following shape from here ...
   0.05, // ... up through here
-  4, // the number of points making up the shape ...
-  <1,0>, <0,1>, <-1,0>, <0,-1>
+  5, // the number of points making up the shape ...
+  <1,0>, <0,1>, <-1,0>, <0,-1>, <1,0>
 }
 
 #declare Square_Pair = union {
@@ -38,8 +38,8 @@ light_source { < 140,200,-300> rgb <0.9, 0.9, 1.00>*0.9 shadowless }
   linear_spline
   -0.05, // sweep the following shape from here ...
   0.05, // ... up through here
-  3, // the number of points making up the shape ...
-  <-1,-sqrt(3)/3>, <0,2*sqrt(3)/3>, <1,-sqrt(3)/3>
+  4, // the number of points making up the shape ...
+  <-1,-sqrt(3)/3>, <0,2*sqrt(3)/3>, <1,-sqrt(3)/3>, <-1,-sqrt(3)/3>
   scale <sqrt(2)/2,1,sqrt(2)/2>
 }
 
@@ -48,6 +48,13 @@ light_source { < 140,200,-300> rgb <0.9, 0.9, 1.00>*0.9 shadowless }
   object { Triangle_Face translate -1.155*y rotate 180*y }
   rotate 165*y
 }
+
+#local Squares = array[6][4] { { < 1, 1, 0>, < 1, 0,-1>, < 1,-1, 0>, < 1, 0, 1> } ,
+                               { < 1, 1, 0>, < 0, 1, 1>, <-1, 1, 0>, < 0, 1,-1> } ,
+                               { <-1,-1, 0>, < 0,-1,-1>, < 1,-1, 0>, < 0,-1, 1> } ,
+                               { <-1,-1, 0>, <-1, 0,-1>, <-1, 1, 0>, <-1, 0, 1> } ,
+                               { < 1, 0, 1>, < 0, 1, 1>, <-1, 0, 1>, < 0,-1, 1> } ,
+                               { <-1, 0,-1>, < 0,-1,-1>, < 1, 0,-1>, < 0, 1,-1> } }
 
 #declare Cuboctahedron = union {
   // Faces                                                           
@@ -59,41 +66,17 @@ light_source { < 140,200,-300> rgb <0.9, 0.9, 1.00>*0.9 shadowless }
   object { Square_Pair rotate 45*y rotate 90*x rotate 45*z }
   object { Square_Pair rotate 45*y rotate 90*z rotate 45*x }
   
-  // Vertices
+  // Vertices; we don't need to render these 'cause they'd just get cut off anyway.
   // (±1,±1,0)
   // (±1,0,±1)
   // (0,±1,±1)           
   
-  //Edges                              
-  cylinder { <1,1,0>, <1,0,-1>, 0.05 }
-  cylinder { <1,0,-1>, <1,-1,0>, 0.05 }
-  cylinder { <1,-1,0>, <1,0,1>, 0.05 }
-  cylinder { <1,0,1>, <1,1,0>, 0.05 }
-                                      
-  cylinder { <1,1,0>, <0,1,1>, 0.05 }
-  cylinder { <0,1,1>, <-1,1,0>, 0.05 } 
-  cylinder { <-1,1,0>, <0,1,-1>, 0.05 }
-  cylinder { <0,1,-1>, <1,1,0>, 0.05 }    
-                                        
-  cylinder { <-1,-1,0>, <0,-1,-1>, 0.05 }
-  cylinder { <0,-1,-1>, <1,-1,0>, 0.05 }
-  cylinder { <1,-1,0>, <0,-1,1>, 0.05 }
-  cylinder { <0,-1,1>, <-1,-1,0>, 0.05 }
-                                        
-  cylinder { <-1,-1,0>, <-1,0,-1>, 0.05 }
-  cylinder { <-1,0,-1>, <-1,1,0>, 0.05 }
-  cylinder { <-1,1,0>, <-1,0,1>, 0.05 }
-  cylinder { <-1,0,1>, <-1,-1,0>, 0.05 }
-                                                                             
-  cylinder { <1,0,1>, <0,1,1>, 0.05 }
-  cylinder { <0,1,1>, <-1,0,1>, 0.05 }
-  cylinder { <-1,0,1>, <0,-1,1>, 0.05 }
-  cylinder { <0,-1,1>, <1,0,1>, 0.05 }
-                                                                               
-  cylinder { <-1,0,-1>, <0,-1,-1>, 0.05 }                                    
-  cylinder { <0,-1,-1>, <1,0,-1>, 0.05 }
-  cylinder { <1,0,-1>, <0,1,-1>, 0.05 }                                    
-  cylinder { <0,1,-1>, <-1,0,-1>, 0.05 }
+  //Edges
+  #for (i,0,5)
+    #for (j,0,3)                               
+      cylinder { Squares[i][j], Squares[i][mod(j+1,4)], 0.05 }
+    #end
+  #end
 }
   
 //object { Cuboctahedron texture { pigment { color Grey } } }
@@ -122,4 +105,28 @@ light_source { < 140,200,-300> rgb <0.9, 0.9, 1.00>*0.9 shadowless }
   texture { pigment { color Grey } }       
 }
 
-object { CO_Cell }
+//object { CO_Cell }
+
+#macro SuperCell(C) union {
+  object { C }
+  #for (i,0,11)                   
+   object { C translate 2*Vertex_Vectors[i] }
+  #end
+  /*difference {
+    sphere { 0, 3*sqrt(2) }
+    sphere { 0, 3*sqrt(2)-0.05 }
+    #for (i,0,11)
+      cylinder { 0, 6*Vertex_Vectors[i], 0.45 }
+    #end
+    material {
+      texture {
+        pigment { color rgbf <0.98, 1.0, 0.99, 0.75> }
+        finish { F_Glass4 }
+      }
+      interior { I_Glass caustics 1 }
+    }
+  }*/
+}                                                                       
+#end
+
+object { SuperCell(CO_Cell) }

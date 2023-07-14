@@ -1,4 +1,4 @@
-                                                           #version 3.6;
+#version 3.6;
 global_settings{ assumed_gamma 1.3 max_trace_level 5}
 
 #include "colors.inc"
@@ -10,7 +10,7 @@ global_settings{ assumed_gamma 1.3 max_trace_level 5}
 
 camera {  
   //orthographic
-  location <3,2,1>*1.05
+  location <3,2,1>*2.5
   angle 0 // direction 2*z 
   right     x*image_width/image_height // keep proportions with any aspect ratio
   look_at   0.15*y
@@ -29,18 +29,20 @@ light_source { < 140,200,-300> rgb <0.9, 0.9, 1.00>*0.9 shadowless }
 }
 
 #declare HalfShell = union {
-  object { Face }
+  object { Face }                 
+  #local Pos_Angle = 180+70.5287794;
+  #local Neg_Angle = 180-70.5287794;
   object {
     Face
     translate sqrt(2)*x
-    rotate (180+70.5287794)*y
+    rotate Pos_Angle*y
     Axis_Rotate_Trans(<-sqrt(2),0,1>, 60)
     translate sqrt(2)*x
   }
   object {
     Face
     translate -sqrt(2)*x
-    rotate (180+70.5287794)*y
+    rotate Pos_Angle*y
     Axis_Rotate_Trans(<sqrt(2),0,-1>, 60)
     translate -sqrt(2)*x              
   }
@@ -53,33 +55,25 @@ light_source { < 140,200,-300> rgb <0.9, 0.9, 1.00>*0.9 shadowless }
   object {
     Face                        
     translate sqrt(2)*x
-    rotate (180-70.5287794)*y
+    rotate Neg_Angle*y
     Axis_Rotate_Trans(<sqrt(2),0,1>, 60)
     translate sqrt(2)*x
   }
   object {
     Face                       
     translate -sqrt(2)*x
-    rotate (180-70.5287794)*y
+    rotate Neg_Angle*y
     Axis_Rotate_Trans(<-sqrt(2),0,-1>, 60)
     translate -sqrt(2)*x
   }
 }
+                                                                                                                    
+#local Oct_Verts = array [8] { <1,1,1>, <-1,1,1>, <1,-1,1>, <1,1,-1>, <-1,-1,1>, <-1,1,-1>, <1,-1,-1>, <-1,-1,-1> }
 
 #declare Rhombic_Dodecahedron = union {
   // Faces
   object { HalfShell translate -sqrt(2)*y rotate 45*z}
   object { HalfShell translate -sqrt(2)*y rotate 225*z }
-
-  // Octahedral Vertices
-  sphere { <1,1,1>, 0.05 }
-  sphere { <-1,1,1>, 0.05 }
-  sphere { <1,-1,1>, 0.05 }
-  sphere { <1,1,-1>, 0.05 }
-  sphere { <-1,-1,1>, 0.05 }
-  sphere { <-1,1,-1>, 0.05 }
-  sphere { <1,-1,-1>, 0.05 }
-  sphere { <-1,-1,-1>, 0.05 }
                
   // Cubical Vertices                                                             
   sphere { <2,0,0>, 0.05 }                                                                            
@@ -89,38 +83,15 @@ light_source { < 140,200,-300> rgb <0.9, 0.9, 1.00>*0.9 shadowless }
   sphere { <0,0,2>, 0.05 }                                                                            
   sphere { <0,0,-2>, 0.05 }            
   
-  //Edges
-  cylinder { <1,1,1>, <2,0,0>, 0.05 }
-  cylinder { <1,1,1>, <0,2,0>, 0.05 }
-  cylinder { <1,1,1>, <0,0,2>, 0.05 }
-
-  cylinder { <-1,-1,-1>, <-2,0,0>, 0.05 }
-  cylinder { <-1,-1,-1>, <0,-2,0>, 0.05 }
-  cylinder { <-1,-1,-1>, <0,0,-2>, 0.05 }
- 
-  cylinder { <-1,1,1>, <-2,0,0>, 0.05 }
-  cylinder { <-1,1,1>, <0,2,0>, 0.05 }
-  cylinder { <-1,1,1>, <0,0,2>, 0.05 }
-
-  cylinder { <1,-1,-1>, <2,0,0>, 0.05 }
-  cylinder { <1,-1,-1>, <0,-2,0>, 0.05 }
-  cylinder { <1,-1,-1>, <0,0,-2>, 0.05 }
-            
-  cylinder { <1,-1,1>, <2,0,0>, 0.05 }
-  cylinder { <1,-1,1>, <0,-2,0>, 0.05 }
-  cylinder { <1,-1,1>, <0,0,2>, 0.05 }
-
-  cylinder { <-1,1,-1>, <-2,0,0>, 0.05 }
-  cylinder { <-1,1,-1>, <0,2,0>, 0.05 }
-  cylinder { <-1,1,-1>, <0,0,-2>, 0.05 }
-                        
-  cylinder { <1,1,-1>, <2,0,0>, 0.05 }
-  cylinder { <1,1,-1>, <0,2,0>, 0.05 }
-  cylinder { <1,1,-1>, <0,0,-2>, 0.05 }
-
-  cylinder { <-1,-1,1>, <-2,0,0>, 0.05 }
-  cylinder { <-1,-1,1>, <0,-2,0>, 0.05 }
-  cylinder { <-1,-1,1>, <0,0,2>, 0.05 }
+  #for (i,0,7)
+    // Octahedral Vertices
+    sphere { Oct_Verts[i], 0.05 }
+    
+    //Edges                
+    cylinder { Oct_Verts[i], sgn(Oct_Verts[i].x) * <2,0,0>, 0.05 }
+    cylinder { Oct_Verts[i], sgn(Oct_Verts[i].y) * <0,2,0>, 0.05 }
+    cylinder { Oct_Verts[i], sgn(Oct_Verts[i].z) * <0,0,2>, 0.05 }
+  #end
 }
 
 #declare RD_Interconnectors = union {
@@ -152,7 +123,31 @@ light_source { < 140,200,-300> rgb <0.9, 0.9, 1.00>*0.9 shadowless }
   texture { pigment { color Grey } }       
 }
 
-object { RD_Cell }           
+//object { RD_Cell } 
+
+#macro SuperCell(C) union {
+  object { C }
+  #for (i,0,11)                   
+   object { C translate 2*Vertex_Vectors[i] }
+  #end
+  /*difference {
+    sphere { 0, 3*sqrt(2) }
+    sphere { 0, 3*sqrt(2)-0.05 }
+    #for (i,0,11)
+      cylinder { 0, 6*Vertex_Vectors[i], 0.45 }
+    #end
+    material {
+      texture {
+        pigment { color rgbf <0.98, 1.0, 0.99, 0.75> }
+        finish { F_Glass4 }
+      }
+      interior { I_Glass caustics 1 }
+    }
+  }*/
+}                                                                       
+#end
+
+object { SuperCell(RD_Cell) }          
 
               
                  

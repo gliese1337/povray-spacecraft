@@ -17,7 +17,7 @@
 camera {
    //orthographic
    //location <60,10,0>
-   location <44, 10, -32>
+   location <80, 20, -42>
    //location <20, 20, 0>	// Camera location
    //location <-50,0,0>
    look_at <44,0,0>		// simple command for camera direction
@@ -694,11 +694,11 @@ object{iontube}
 object { sphere { <0, 0, 0>,10000 }
        hollow
        texture {
-               pigment{image_map{gif "..\starfield.gif"}}
+               pigment{image_map{gif "./starfield.gif"}}
                //scale <80000, 50000, 30000>
                finish { crand .05 ambient .7 }
        }
 }
 
-object{ship rotate <-10,-37,-2> translate <25,-10,27>}
+object{ship}
 

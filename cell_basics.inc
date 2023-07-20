@@ -1,37 +1,57 @@
-#declare Plate_Block = intersection {
-  cylinder { -0.005*y, 0.005*y, 0.025 }
-  cylinder { <0, -1, 0>, <0, 1, 0>, 0.008 scale 1.5*x translate 0.02*x}
-}
+#declare Connector_Angle = 54.7356103;
+//#declare Connector_Height = 0.083;
+#declare Connector_Radius = 0.5;
+#declare Wall_Thickness = 0.05;
+#declare Anchor_Radius = 0.005;
+#declare Flange_Width = 0.002;
+#declare Flange_Length = 0.03;
+#declare Anchor_Offset = 0.1;
+#declare Anchor_Ring_Radius = Connector_Radius + Anchor_Offset;
+#declare Intersection_Radius = 0.025;
+#declare Cross_Plate_Offset = 0.605; // TODO: Calculate this dynamically
 
 #declare Intersection_Plate = union {
-  cylinder { -0.0015*y, 0.0015*y, 0.025 }
-  cylinder { -0.005*y, 0.005*y, 0.004 }
+  cylinder { -Flange_Width/2*y, Flange_Width/2*y, Intersection_Radius }
+  #difference {
+    cylinder { -Anchor_Radius*y, Anchor_Radius*y, Intersection_Radius }
+    #for (i,0,3)
+      difference {
+        cylinder { -(Anchor_Radius+0.1)*y, (Anchor_Radius+0.1)*y, Intersection_Radius + 2*Anchor_Radius }
+        cylinder { -(Anchor_Radius+0.2)*y, (Anchor_Radius+0.2)*y, Intersection_Radius + Anchor_Radius }
+        translate (Intersection_Radius + 2*Anchor_Radius)*x
+        rotate (45+90*i)*y
+      }
+    #end
+  }
+  box {
+    <-Flange_Width, -3*Flange_Width, -Flange_Width>/2,
+    <Flange_Width, 3*Flange_Width, Flange_Width>/2
+    rotate 45*y
+  }
   #for (i, 0, 3)
-    object { Plate_Block rotate (45+i*90)*y }
-    sphere { .025*x, 0.005 rotate i*90*y } 
+    sphere { Intersection_Radius*x, Anchor_Radius rotate i*90*y }
   #end
 }
 
 #declare Cross_Plate = union {                                                            
-  object { Intersection_Plate rotate 90*x translate 0.6*z }
-  cylinder { <0, 0.5, 0.6>, <0, 0.025, 0.6>, .005 }
-  cylinder { <0, -0.05, 0.6>, <0, -0.025, 0.6>, .005 }
+  object { Intersection_Plate rotate 90*x translate Anchor_Ring_Radius*z }
+  cylinder { <0, 0.5, Anchor_Ring_Radius>, <0, Intersection_Radius, Anchor_Ring_Radius>, Anchor_Radius }
+  cylinder { <0, -0.05, Anchor_Ring_Radius>, <0, Intersection_Radius, Anchor_Ring_Radius>, Anchor_Radius }
 }
-
-#declare Connector_Angle = 54.7356103;
-#declare Connector_Height = 0.083;
 
 #declare Edge_Angles = array[4] { Connector_Angle, 180 - Connector_Angle, -Connector_Angle,  Connector_Angle - 180 }
 
-#declare Anchor_Ring = union {
+#macro Anchor_Ring(S,Anchor_T)
+#local isect_angle = 2*degrees(atan(Intersection_Radius/Anchor_Ring_Radius));
+union {
   difference {
-    torus { 0.6 0.005 }
+    torus { Anchor_Ring_Radius Anchor_Radius }
     #for (i,0,3)                               
-     object { Wedge(5) rotate (Edge_Angles[i]-2.5)*y }
+     object { Wedge(isect_angle) rotate (Edge_Angles[i]-(isect_angle/2))*y }
     #end
          
-    object { Wedge(5) rotate -2.5*y rotate 0*y }
-    object { Wedge(5) rotate -2.5*y rotate 180*y } 
+    object { Wedge(isect_angle) rotate -(isect_angle/2)*y rotate 0*y }
+    object { Wedge(isect_angle) rotate -(isect_angle/2)*y rotate 180*y } 
   }
   
   #for (i,0,3)                                                                      
@@ -41,44 +61,421 @@
                                                           
   object { Cross_Plate }                                  
   object { Cross_Plate rotate 180*y }
-}
-
-#macro Connection_Ring(S,Hull_T,Anchor_T)
-union {
-  cylinder { 0, S*sqrt(2)*x, 0.5 texture { Hull_T } }                                                       
-  object { Anchor_Ring rotate 90*z translate (S*sqrt(2)-0.05)*x texture { Anchor_T } }  
+  
+  rotate 90*z
+  translate (S*sqrt(2)-Wall_Thickness)*x
+  texture { Anchor_T }
 }
 #end
 
-#macro Place_At_Vertices(S,M)
+#macro Connector_Cylinder(S,Hull_T)
+cylinder { 0, S*sqrt(2)*x, Connector_Radius texture { Hull_T } }
+#end
+
+#declare Vertex_Vectors = array[12] { <1,1,0>, <1,0,1>, <0,1,1>, // triangle
+                                      <1,-1,0>, <-1,1,0>,
+                                      <-1,0,1>, <1,0,-1>, // hexagon
+                                      <0,1,-1>, <0,-1,1>,
+                                      <-1,-1,0>, <-1,0,-1>, <0,-1,-1> } // second triangle
+
+#declare Vertex_Orientations = array[12] { 90, 0, 45, 90, 90, 0, 0, 135, 135, 90, 0, 45 }
+
+#macro Place_At_Vertices(M)
 union {
-  #for (i, 0, 3)
-    #declare theta = (45+i*90);
-    object { M rotate theta*y } 
-    object { M rotate 90*x rotate theta*z }
+  #for (i,0,11)                                                         
+    object { M rotate Vertex_Orientations[i]*x Reorient_Trans(x, Vertex_Vectors[i]) }
   #end
-            
-  #for (i, 0, 1)                                
-    #declare theta = (45+i*180);
-    object { M rotate 90*z rotate theta*x }
-    object { M rotate 90*x rotate 270*y rotate theta*x }
+}
+#end
+
+#macro Cell_Negative(S)
+union {
+  #for (i,0,11)
+    cylinder { 0, Vertex_Vectors[i]*2*S, Connector_Radius - Wall_Thickness }
   #end
 }
 #end
 
 #macro Connection_Set(S,Hull_T,Anchor_T)
-Place_At_Vertices(S, Connection_Ring(S,Hull_T,Anchor_T))
+Place_At_Vertices(Connector_Cylinder(S,Hull_T))
+Place_At_Vertices(Anchor_Ring(S,Anchor_T))
 #end
 
-#declare Vertex_Vectors = array[12] { <1,1,0>, <1,-1,0>, <-1,1,0>, <-1,-1,0>,
-                                      <1,0,1>, <1,0,-1>, <-1,0,1>, <-1,0,-1>,
-                                      <0,1,1>, <0,1,-1>, <0,-1,1>, <0,-1,-1> }
-
-#macro Cell_Negative(S)
-union {
-  #for (i,0,11)
-    cylinder { 0, Vertex_Vectors[i]*2*S, 0.45 }
+#macro Anchor_Extension(S,L,Anchor_T)
+#local height = S*sqrt(2)-Wall_Thickness;
+union {                                            
+  cylinder { <0, height, -0.025>, <0, height, -L>, Anchor_Radius }
+  #for (i,1,2)
+    #local o = -0.3335*L*i;
+    box { <Flange_Width/2, height, o+Flange_Length/2>, <-Flange_Width/2, height-2*Wall_Thickness, o-Flange_Length/2> }
   #end
+  box { <Flange_Width/2, height, -L+Flange_Length/2>, <-Flange_Width/2, height-2*Wall_Thickness, -L> }
+  texture { Anchor_T } 
+}
+#end
+
+#macro Anchor_Extensions(S,L,Anchor_T)
+union {        
+  object { Anchor_Extension(S,L,Anchor_T) translate Cross_Plate_Offset*x }
+  object { Anchor_Extension(S,L,Anchor_T) translate -Cross_Plate_Offset*x }
+}
+#end
+
+#macro Partial_Vertices(M,Indices)
+union {
+  #for (i,0,dimension_size(Indices,1)-1)                                                         
+    object { M rotate Vertex_Orientations[i]*x Reorient_Trans(x, Vertex_Vectors[i]) }
+  #end
+}
+#end
+
+#macro Connector_Negative(S,Indices)
+union {
+  #for (i,0,dimension_size(Indices,1)-1)                                                         
+    cylinder { 0, Vertex_Vectors[i]*2*S Connector_Radius-Wall_Thickness }
+  #end
+}
+#end
+
+#macro Ring_Cylinder(S,L,Hull_T) {
+cylinder { L*z, -L*z, S*sqrt(2)-2*Wall_Thickness texture { Hull_T } }
+#end
+
+#macro Ring_Negative(S,L,Alignment)
+cylinder { (L+0.1)*z, -(L+0.1)*z, S*sqrt(2)-3*Wall_Thickness Reorient_Trans(z, Alignment) }
+#end
+
+/* TRIANGLE CAP MACROS */
+
+#local Triangle_Cap_Vertex_Indices = array[9]{0,1,2,3,4,5,6,7,8};
+#macro Triangle_Cap_Vertices(M)
+Partial_Vertices(M, Triangle_Cap_Vertex_Indices)
+#end
+
+#macro Triangle_Cap_Negative(S)
+Connector_Negatives(S,Triangle_Cap_Vertex_Indices)
+#end
+
+#macro Triangle_Cap_Connection_Set(S,Hull_T,Anchor_T)
+Triangle_Cap_Vertices(Connector_Cylinder(S,Hull_T))
+intersection {
+  Triangle_Cap_Vertices(Anchor_Ring(S,Anchor_T))
+  cylinder { (S*sqrt(2)+1)*z, -0.025*z, S*sqrt(2)+1 Reorient_Trans(z, <1,1,1>) }
+}
+union {
+  #for (i,0,5)                            
+    object { Anchor_Extensions(S,sqrt(12),Anchor_T) rotate (45+60*i)*z }
+  #end
+  Reorient_Trans(z, <1,1,1>)
+}
+#end
+
+#local Triangle_Ring_Vertex_Indices = array[9]{0,1,2,3,4,5,6,7,8};
+#macro Triangle_Ring_Vertices(M)
+Partial_Vertices(S, Triangle_Ring_Vertex_Indices)
+#end
+         
+#macro Triangle_Ring_Negative(S)
+Connector_Negatives(S,Triangle_Ring_Vertex_Indices)
+#end
+
+#macro Triangle_Ring_Connection_Set(S,Hull_T,Anchor_T)
+union {
+  Triangle_Ring_Vertices(Connector_Cylinder(S,Hull_T))
+  Triangle_Ring_Vertices(union {
+    object { Cross_Plate }                                  
+    object { Cross_Plate rotate 180*y }
+    rotate 90*z
+    translate (S*sqrt(2)-Wall_Thickness)*x
+    texture { Anchor_T }
+  })
+}
+#end
+
+#macro Triangle_Ring(S, Hull_T,Anchor_T)
+#local halflen = sqrt(12);
+difference {
+  union {
+    union {
+      Ring_Cylinder(S,halflen,Hull_T)
+    
+      #for (i,0,5)                            
+        object { Anchor_Extensions(S,l,Anchor_T) rotate (45+60*i)*z }                       
+        object { Anchor_Extensions(S,l,Anchor_T) rotate 180*y rotate (45+60*i)*z }
+      #end
+      Reorient_Trans(z, <1,1,1>)
+    }
+    Triangle_Ring_Connection_Set(S,Hull_T,Anchor_T)
+  }
+  union {
+    Cylinder_Negative(S,L,Alignment)
+    Triangle_Ring_Negative(S)
+    texture { Hull_T }
+  }       
+}
+#end
+
+
+/* POINT CAP MACROS */
+
+#local Point_Cap_Vertex_Indices = array[7]{0,1,2,4,5,7,8};
+#macro Point_Cap_Vertices(M)
+Partial_Vertices(M,Point_Cap_Vertices)
+#end
+
+#macro Point_Cap_Negative(S)
+Connector_Negatives(S,Point_Cap_Vertex_Indices)
+#end
+
+#macro Point_Cap_Connection_Set(S,Hull_T,Anchor_T)
+#local height = S*sqrt(2)-Wall_Thickness;
+#local double = union {
+  object { Anchor_Extensions(S,sqrt(2),Anchor_T) }                                                   
+  cylinder { <Cross_Plate_Offset, height, -Intersection_Radius>, <0.599, height, 0>, Anchor_Radius texture { Anchor_T } }
+  cylinder { <-Cross_Plate_Offset, height, -Intersection_Radius>, <-0.599, height, 0>, Anchor_Radius texture { Anchor_T } }
+}
+#local single = union {                            
+  object { Anchor_Extension(S,sqrt(2),Anchor_T) }
+  cylinder { <0, height, -Intersection_Radius>, <0, height, 0>, Anchor_Radius texture { Anchor_T } }
+  //translate (0.136/S)*y
+}
+union {
+  Point_Cap_Vertices(Connector_Cylinder(S,Hull_T))
+  intersection {
+    Point_Cap_Vertices(Anchor_Ring(S,Anchor_T))
+    cylinder { 0, S*sqrt(2)*<0,1,1>, S*sqrt(2)+0.5 }
+  }
+  union {                                                         
+    object { double }
+    object { double rotate 180*z }
+    object { single rotate 54.75*z }
+    object { single rotate 125.25*z }
+    object { single rotate -54.75*z }
+    object { single rotate -125.25*z }                           
+    Reorient_Trans(z, <0,1,1>)
+  }
+}
+#end
+
+#macro Point_Ring_Vertices(M)
+union {
+  object { M rotate Vertex_Orientations[7]*x Reorient_Trans(x, Vertex_Vectors[7]) }                                                                      
+  object { M rotate Vertex_Orientations[8]*x Reorient_Trans(x, Vertex_Vectors[8]) }
+}
+#end
+         
+#macro Point_Ring_Negative(S)
+union { 
+  cylinder { 0, Vertex_Vectors[7]*2*S Connector_Radius - Wall_Thickness }
+  cylinder { 0, Vertex_Vectors[8]*2*S  Connector_Radius - Wall_Thickness }
+}
+#end
+
+#macro Point_Ring_Connection_Set(S,Hull_T,Anchor_T)
+union {
+  Point_Ring_Vertices(Connector_Cylinder(S,Hull_T))
+  Point_Ring_Vertices(union {
+    object { Cross_Plate }                                  
+    object { Cross_Plate rotate 180*y }
+    rotate 90*z
+    translate (S*sqrt(2)-Wall_Thickness)*x
+    texture { Anchor_T }
+  })
+}
+#end
+
+#macro Point_Ring(S, Hull_T,Anchor_T)
+#local height = S*sqrt(2)-Wall_Thickness;
+#local single = union {                            
+  object { Anchor_Extension(S,sqrt(2),Anchor_T) }
+  cylinder { <0, height, -.025>, <0, height, 0>, 0.005 texture { Anchor_T } }
+  translate (0.136/S)*y
+}
+difference {
+  union {
+    union {
+      cylinder { sqrt(2)*z, -sqrt(2)*z, S*sqrt(2)-(S-1)*Wall_Thickness texture { Hull_T } }
+      #for (i,0,1)                            
+        object { Anchor_Extensions(S,sqrt(2),Anchor_T) rotate 180*i*z }                       
+        object { Anchor_Extensions(S,sqrt(2),Anchor_T) rotate 180*y rotate 180*i*z }
+      #end                               
+      object { single rotate 54.75*z }
+      object { single rotate 180*y rotate 54.75*z }
+      object { single rotate 125.25*z }
+      object { single rotate 180*y rotate 125.25*z }
+      object { single rotate -54.75*z }
+      object { single rotate 180*y rotate -54.75*z }
+      object { single rotate -125.25*z }
+      object { single rotate 180*y rotate -125.25*z }
+      Reorient_Trans(z, <0,1,1>)
+    }
+    Point_Ring_Connection_Set(S,Hull_T,Anchor_T)
+  }
+  union {
+    cylinder { 2.1*z, -2.1*z, S*sqrt(2)-S*Wall_Thickness Reorient_Trans(z, <0,1,1>) }
+    Point_Ring_Negative(S)
+    texture { Hull_T }
+  }       
+}
+#end
+
+
+
+/* SQUARE CAP MACROS */
+
+#macro Square_Ring_Vertices(M)
+union {                                                                      
+  object { M rotate Vertex_Orientations[0]*x  Reorient_Trans(x, Vertex_Vectors[0]) }
+  object { M rotate Vertex_Orientations[3]*x  Reorient_Trans(x, Vertex_Vectors[3]) }
+  object { M rotate Vertex_Orientations[4]*x  Reorient_Trans(x, Vertex_Vectors[4]) }
+  object { M rotate Vertex_Orientations[10]*x Reorient_Trans(x, Vertex_Vectors[9]) }
+}
+#end
+         
+#macro Square_Ring_Negative(S)
+#local negrad = Connector_Radius - Wall_Thickness;
+union { 
+  cylinder { 0, Vertex_Vectors[0]*2*S negrad }
+  cylinder { 0, Vertex_Vectors[3]*2*S negrad }
+  cylinder { 0, Vertex_Vectors[4]*2*S negrad }
+  cylinder { 0, Vertex_Vectors[9]*2*S negrad }
+}
+#end
+
+#macro Square_Ring_Connection_Set(S,Hull_T,Anchor_T)
+union {
+  Square_Ring_Vertices(Connector_Cylinder(S,Hull_T))
+  Square_Ring_Vertices(union {
+    object { Cross_Plate }                                  
+    object { Cross_Plate rotate 180*y }
+    rotate 90*z
+    translate (S*sqrt(2)-Wall_Thickness)*x
+    texture { Anchor_T }
+  })
+}
+#end
+
+#macro Square_Ring(S, Hull_T,Anchor_T)
+difference {
+  union {
+    cylinder { 2*z, -2*z, S*sqrt(2)-(S-1)*Wall_Thickness texture { Hull_T } }
+    
+    Square_Ring_Connection_Set(S,Hull_T,Anchor_T)
+    #for (i,0,3)                            
+      object { Anchor_Extensions(S,2,Anchor_T) rotate (45+90*i)*z }                       
+      object { Anchor_Extensions(S,2,Anchor_T) rotate 180*y rotate (45+90*i)*z }
+    #end
+  }
+  union {
+    cylinder { 2.1*z, -2.1*z, S*sqrt(2)-S*Wall_Thickness }
+    Square_Ring_Negative(S)
+    texture { Hull_T }
+  }       
+}
+#end
+           
+#macro Square_Cap_Vertices(M)
+union {
+  #for (i,0,5)               
+    object { M rotate Vertex_Orientations[i]*x Reorient_Trans(x, Vertex_Vectors[i]) }
+  #end
+  object { M rotate Vertex_Orientations[8]*x Reorient_Trans(x, Vertex_Vectors[8]) }
+  object { M rotate Vertex_Orientations[9]*x Reorient_Trans(x, Vertex_Vectors[9]) }
+}
+#end
+         
+#macro Square_Cap_Negative(S)
+#local negrad = Connector_Radius - Wall_Thickness;
+union {
+  #for (i,0,5)               
+    cylinder { 0, Vertex_Vectors[i]*2*S, negrad }
+  #end
+  cylinder { 0, Vertex_Vectors[8]*2*S negrad }
+  cylinder { 0, Vertex_Vectors[9]*2*S negrad }
+}
+#end
+
+#macro Square_Cap_Connection_Set(S,Hull_T,Anchor_T)
+union {
+  Square_Cap_Vertices(Connector_Cylinder(S,Hull_T))
+  intersection {
+    Square_Cap_Vertices(object { Anchor_Ring rotate 90*z translate (S*sqrt(2)-Wall_Thickness)*x texture { Anchor_T } })
+    cylinder { (S*sqrt(2)+1)*z, -0.025*z, S*sqrt(2)+1 }
+  }
+  #for (i,0,3)                            
+    object { Anchor_Extensions(S,2,Anchor_T) rotate (45+90*i)*z }
+  #end
+}
+#end
+
+#macro Square_Ring_Vertices(M)
+union {                                                                      
+  object { M rotate Vertex_Orientations[0]*x  Reorient_Trans(x, Vertex_Vectors[0]) }
+  object { M rotate Vertex_Orientations[3]*x  Reorient_Trans(x, Vertex_Vectors[3]) }
+  object { M rotate Vertex_Orientations[4]*x  Reorient_Trans(x, Vertex_Vectors[4]) }
+  object { M rotate Vertex_Orientations[10]*x Reorient_Trans(x, Vertex_Vectors[9]) }
+}
+#end
+         
+#macro Square_Ring_Negative(S)
+#local negrad = Connector_Radius - Wall_Thickness;
+union { 
+  cylinder { 0, Vertex_Vectors[0]*2*S negrad }
+  cylinder { 0, Vertex_Vectors[3]*2*S negrad }
+  cylinder { 0, Vertex_Vectors[4]*2*S negrad }
+  cylinder { 0, Vertex_Vectors[9]*2*S negrad }
+}
+#end
+
+#macro Square_Ring_Connection_Set(S,Hull_T,Anchor_T)
+union {
+  Square_Ring_Vertices(Connector_Cylinder(0,Hull_T))
+  Square_Ring_Vertices(union {
+    object { Cross_Plate }                                  
+    object { Cross_Plate rotate 180*y }
+    rotate 90*z
+    translate (S*sqrt(2)-0.05)*x
+    texture { Anchor_T }
+  })
+}
+#end
+
+#macro Square_Ring(S, Hull_T,Anchor_T)
+difference {
+  union {
+    cylinder { 2*z, -2*z, S*sqrt(2)-(S-1)*Wall_Thickness texture { Hull_T } }
+    
+    Square_Ring_Connection_Set(S,Hull_T,Anchor_T)
+    #for (i,0,3)                            
+      object { Anchor_Extensions(S,2,Anchor_T) rotate (45+90*i)*z }                       
+      object { Anchor_Extensions(S,2,Anchor_T) rotate 180*y rotate (45+90*i)*z }
+    #end
+  }
+  union {
+    cylinder { 2.1*z, -2.1*z, S*sqrt(2)-S*Wall_Thickness }
+    Square_Ring_Negative(S)
+    texture { Hull_T }
+  }       
+}
+#end
+
+#macro Sphere_Cap(S,L,Hull_T)
+#local r = S*sqrt(2)-((S-1)*Wall_Thickness);
+union {
+  intersection {
+    sphere { 0, r }
+    cylinder { 0, r*x, r }
+  }
+  cylinder { 0, -L*x, r }
+  texture { Hull_T }
+}
+#end
+
+#macro Sphere_Cap_Negative(S,L)
+#local r = S*sqrt(2)-((S-1)*Wall_Thickness);
+union {
+  sphere { 0, r-Wall_Thickness }
+  cylinder { 0, -(L+.Wall_Thickness)*x, r-Wall_Thickness }
 }
 #end
 
@@ -86,7 +483,71 @@ union {
 union {
   object { C }
   #for (i,0,11)                   
-   object { C translate 2*S*Vertex_Vectors[i] }
+    object { C translate 2*S*Vertex_Vectors[i] }
   #end
+}                                                                       
+#end
+
+#macro Triangle(C,S)
+union {
+  #for (i,0,2)                   
+    object { C translate 2*S*Vertex_Vectors[i] }
+  #end
+  translate -sqrt(2)
+}                                                                       
+#end
+
+// Flat tetrahedron
+// Conical tetrahedron
+// Spherical tetrahedron
+#macro Tetrahedron(C,S)
+union {
+  object { C }
+  #for (i,0,2)                   
+    object { C translate 2*S*Vertex_Vectors[i] }
+  #end
+  translate -1
+}                                                                       
+#end
+
+#macro Hexagon(C,S)
+union {
+  #for (i,3,8)                   
+    object { C translate 2*S*Vertex_Vectors[i] }
+  #end
+}                                                                       
+#end
+
+#macro Square(C,S)
+union {                             
+  object { C translate 2*S*< 1, 0, 0> }
+  object { C translate 2*S*<-1, 0, 0> }
+  object { C translate 2*S*< 0, 0, 1> }
+  object { C translate 2*S*< 0, 0,-1> }
+}                                                                       
+#end
+
+// Flat cube
+// Flat octahedron
+// Conical octahedron
+// Spherical octahedron
+#macro Octahedron(C,S)
+union {
+  object { C translate 2*S*< 1, 0, 0> }
+  object { C translate 2*S*<-1, 0, 0> }                             
+  object { C translate 2*S*< 0, 1, 0> }
+  object { C translate 2*S*< 0,-1, 0> }
+  object { C translate 2*S*< 0, 0, 1> }
+  object { C translate 2*S*< 0, 0,-1> }
+}                                                                       
+#end
+
+#macro Cross(C,S)
+union {
+  object { C }                             
+  object { C translate 2*S*< 1, 0, 1> }
+  object { C translate 2*S*<-1, 0,-1> }
+  object { C translate 2*S*< 1, 0,-1> }
+  object { C translate 2*S*<-1, 0, 1> }
 }                                                                       
 #end

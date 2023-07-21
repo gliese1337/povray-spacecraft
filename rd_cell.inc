@@ -1,8 +1,5 @@
 #version 3.6;
 
-#include "functions.inc"
-#include "transforms.inc"
-#include "shapes.inc"
 #include "./cell_basics.inc"
 
 #macro Rhombic_Dodecahedron(S)
@@ -32,10 +29,11 @@ mesh2 {
 
 #macro RD_Cell(S, Hull_T, Anchor_T)
 #local Interconnectors = union {
-  #local rh = S*sqrt(2)-Wall_Thickness;
+  #local rh = S*Module_Radius-Wall_Thickness;
   #local rm = rh*2/sqrt(3);
+  #local ra = Anchor_Ring_Radius + Intersection_Radius;
   
-  #local spoint = <rh, 0.625, 0>;
+  #local spoint = <rh, ra, 0>;
   
   #local epoint = vaxis_rotate((rm-0.03)*x, z, 30);               
   #local mpoint = <rh, -2*(rh-epoint.x)+epoint.y, 0>;
@@ -69,13 +67,13 @@ mesh2 {
 
 difference {
   union {
-    object { Rhombic_Dodecahedron(S-2*Wall_Thickness) texture { Hull_T } }
+    object { Rhombic_Dodecahedron(S*Module_Radius*.7071 - 2*Wall_Thickness) texture { Hull_T } }
     Connection_Set(S,Hull_T,Anchor_T)
     Place_At_Vertices(Interconnectors)
   }
   union {   
     Cell_Negative(S)
-    Rhombic_Dodecahedron(S-3*Wall_Thickness)
+    Rhombic_Dodecahedron(S*Module_Radius*.7071-3*Wall_Thickness)
     texture { Hull_T }
   }       
 }

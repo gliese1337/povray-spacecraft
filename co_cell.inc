@@ -1,8 +1,5 @@
 #version 3.6;
 
-#include "functions.inc"
-#include "transforms.inc"
-#include "shapes.inc"
 #include "./cell_basics.inc"
 
 #macro Cuboctahedron(S)
@@ -38,10 +35,11 @@ mesh2 {
 
 #macro CO_Interconnectors(S,Anchor_T)
 union {
-  #local rh = S*sqrt(2)-Wall_Thickness;
-  #local rr = sqrt(rh*rh+0.625*0.625);
-  #local spoint = <rh, 0.625, 0>;
-  #local epoint = (spoint + vaxis_rotate(<rh, -0.625, 0>, z, 60))/2;
+  #local rh = S*Module_Radius-Wall_Thickness;
+  #local ra = Anchor_Ring_Radius + Intersection_Radius;
+  #local rr = sqrt(rh*rh+ra*ra);
+  #local spoint = <rh, ra, 0>;
+  #local epoint = (spoint + vaxis_rotate(<rh, -ra, 0>, z, 60))/2;
     
   #local arrow = (epoint - spoint)/S;
   #local flange = box {
@@ -67,13 +65,13 @@ union {
 #macro CO_Cell(S, Hull_T, Anchor_T)
 difference {
   union {
-    object { Cuboctahedron(S+2*Wall_Thickness) texture { Hull_T } }
+    object { Cuboctahedron(S*Module_Radius*0.85 - Wall_Thickness) texture { Hull_T } }
     Connection_Set(S,Hull_T,Anchor_T)   
     Place_At_Vertices(CO_Interconnectors(S,Anchor_T))
   }
   union {
     object{ Cell_Negative(S) }
-    object { Cuboctahedron(S+Wall_Thickness) }
+    object { Cuboctahedron(S*Module_Radius*0.85 - 2*Wall_Thickness) }
     texture { Hull_T }
   }       
 }
@@ -92,13 +90,13 @@ union {
 #macro Cone_Cell(S, Hull_T, Anchor_T)
 difference {
   union {
-    object { Conoctahedron(S+2*Wall_Thickness) texture { Hull_T } }
+    object { Conoctahedron(S*Module_Radius*0.85 - 1.5*Wall_Thickness) texture { Hull_T } }
     Connection_Set(S,Hull_T,Anchor_T)
     Place_At_Vertices(CO_Interconnectors(S,Anchor_T))
   }
   union {
     Cell_Negative(S)
-    object { Conoctahedron(S+Wall_Thickness) }
+    object { Conoctahedron(S*Module_Radius*0.85 - 2.5*Wall_Thickness) }
     texture { Hull_T }
   }       
 }

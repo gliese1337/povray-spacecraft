@@ -1,6 +1,7 @@
 #declare Connector_Angle = 54.7356103;
 //#declare Connector_Height = 0.083;
-#declare Connector_Radius = 0.5;
+#declare Connector_Radius = 1;
+#declare Module_Radius = 2*sqrt(2);
 #declare Wall_Thickness = 0.05;
 #declare Anchor_Radius = 0.005;
 #declare Flange_Width = 0.002;
@@ -12,7 +13,7 @@
 
 #declare Intersection_Plate = union {
   cylinder { -Flange_Width/2*y, Flange_Width/2*y, Intersection_Radius }
-  #difference {
+  /*#difference {
     cylinder { -Anchor_Radius*y, Anchor_Radius*y, Intersection_Radius }
     #for (i,0,3)
       difference {
@@ -22,7 +23,7 @@
         rotate (45+90*i)*y
       }
     #end
-  }
+  }*/
   box {
     <-Flange_Width, -3*Flange_Width, -Flange_Width>/2,
     <Flange_Width, 3*Flange_Width, Flange_Width>/2
@@ -55,21 +56,21 @@ union {
   }
   
   #for (i,0,3)                                                                      
-    object { Intersection_Plate rotate -.4*y translate 0.5998*z rotate Edge_Angles[i]*y}
-    cylinder { 0.49*z, 0.575*z, 0.005 rotate Edge_Angles[i]*y }
+    object { Intersection_Plate rotate -.4*y translate (Anchor_Ring_Radius-0.0002)*z rotate Edge_Angles[i]*y}
+    cylinder { (Connector_Radius-0.01)*z, (Anchor_Ring_Radius-Intersection_Radius)*z, Anchor_Radius rotate Edge_Angles[i]*y }
   #end
                                                           
   object { Cross_Plate }                                  
   object { Cross_Plate rotate 180*y }
   
   rotate 90*z
-  translate (S*sqrt(2)-Wall_Thickness)*x
+  translate (S*Module_Radius-Wall_Thickness)*x
   texture { Anchor_T }
 }
 #end
 
 #macro Connector_Cylinder(S,Hull_T)
-cylinder { 0, S*sqrt(2)*x, Connector_Radius texture { Hull_T } }
+cylinder { 0, S*Module_Radius*x, Connector_Radius texture { Hull_T } }
 #end
 
 #declare Vertex_Vectors = array[12] { <1,1,0>, <1,0,1>, <0,1,1>, // triangle
@@ -91,7 +92,7 @@ union {
 #macro Cell_Negative(S)
 union {
   #for (i,0,11)
-    cylinder { 0, Vertex_Vectors[i]*2*S, Connector_Radius - Wall_Thickness }
+    cylinder { 0, Vertex_Vectors[i]*S*Module_Radius, Connector_Radius - Wall_Thickness }
   #end
 }
 #end
@@ -102,7 +103,7 @@ Place_At_Vertices(Anchor_Ring(S,Anchor_T))
 #end
 
 #macro Anchor_Extension(S,L,Anchor_T)
-#local height = S*sqrt(2)-Wall_Thickness;
+#local height = S*Module_Radius-Wall_Thickness;
 union {                                            
   cylinder { <0, height, -0.025>, <0, height, -L>, Anchor_Radius }
   #for (i,1,2)
@@ -132,17 +133,17 @@ union {
 #macro Connector_Negative(S,Indices)
 union {
   #for (i,0,dimension_size(Indices,1)-1)                                                         
-    cylinder { 0, Vertex_Vectors[i]*2*S Connector_Radius-Wall_Thickness }
+    cylinder { 0, Vertex_Vectors[i]*S*Module_Radius Connector_Radius-Wall_Thickness }
   #end
 }
 #end
 
 #macro Ring_Cylinder(S,L,Hull_T) {
-cylinder { L*z, -L*z, S*sqrt(2)-2*Wall_Thickness texture { Hull_T } }
+cylinder { L*z, -L*z, S*Module_Radius-2*Wall_Thickness texture { Hull_T } }
 #end
 
 #macro Ring_Negative(S,L,Alignment)
-cylinder { (L+0.1)*z, -(L+0.1)*z, S*sqrt(2)-3*Wall_Thickness Reorient_Trans(z, Alignment) }
+cylinder { (L+0.1)*z, -(L+0.1)*z, S*Module_Radius-3*Wall_Thickness Reorient_Trans(z, Alignment) }
 #end
 
 /* TRIANGLE CAP MACROS */
@@ -160,7 +161,7 @@ Connector_Negatives(S,Triangle_Cap_Vertex_Indices)
 Triangle_Cap_Vertices(Connector_Cylinder(S,Hull_T))
 intersection {
   Triangle_Cap_Vertices(Anchor_Ring(S,Anchor_T))
-  cylinder { (S*sqrt(2)+1)*z, -0.025*z, S*sqrt(2)+1 Reorient_Trans(z, <1,1,1>) }
+  cylinder { (S*Module_Radius+1)*z, -0.025*z, S*Module_Radius+1 Reorient_Trans(z, <1,1,1>) }
 }
 union {
   #for (i,0,5)                            
@@ -186,7 +187,7 @@ union {
     object { Cross_Plate }                                  
     object { Cross_Plate rotate 180*y }
     rotate 90*z
-    translate (S*sqrt(2)-Wall_Thickness)*x
+    translate (S*Module_Radius-Wall_Thickness)*x
     texture { Anchor_T }
   })
 }
@@ -228,7 +229,7 @@ Connector_Negatives(S,Point_Cap_Vertex_Indices)
 #end
 
 #macro Point_Cap_Connection_Set(S,Hull_T,Anchor_T)
-#local height = S*sqrt(2)-Wall_Thickness;
+#local height = S*Module_Radius-Wall_Thickness;
 #local double = union {
   object { Anchor_Extensions(S,sqrt(2),Anchor_T) }                                                   
   cylinder { <Cross_Plate_Offset, height, -Intersection_Radius>, <0.599, height, 0>, Anchor_Radius texture { Anchor_T } }
@@ -243,7 +244,7 @@ union {
   Point_Cap_Vertices(Connector_Cylinder(S,Hull_T))
   intersection {
     Point_Cap_Vertices(Anchor_Ring(S,Anchor_T))
-    cylinder { 0, S*sqrt(2)*<0,1,1>, S*sqrt(2)+0.5 }
+    cylinder { 0, S*Module_Radius*<0,1,1>, S*Module_Radius+0.5 }
   }
   union {                                                         
     object { double }
@@ -266,8 +267,8 @@ union {
          
 #macro Point_Ring_Negative(S)
 union { 
-  cylinder { 0, Vertex_Vectors[7]*2*S Connector_Radius - Wall_Thickness }
-  cylinder { 0, Vertex_Vectors[8]*2*S  Connector_Radius - Wall_Thickness }
+  cylinder { 0, Vertex_Vectors[7]*S*Module_Radius Connector_Radius - Wall_Thickness }
+  cylinder { 0, Vertex_Vectors[8]*S*Module_Radius  Connector_Radius - Wall_Thickness }
 }
 #end
 
@@ -278,14 +279,14 @@ union {
     object { Cross_Plate }                                  
     object { Cross_Plate rotate 180*y }
     rotate 90*z
-    translate (S*sqrt(2)-Wall_Thickness)*x
+    translate (S*Module_Radius-Wall_Thickness)*x
     texture { Anchor_T }
   })
 }
 #end
 
 #macro Point_Ring(S, Hull_T,Anchor_T)
-#local height = S*sqrt(2)-Wall_Thickness;
+#local height = S*Module_Radius-Wall_Thickness;
 #local single = union {                            
   object { Anchor_Extension(S,sqrt(2),Anchor_T) }
   cylinder { <0, height, -.025>, <0, height, 0>, 0.005 texture { Anchor_T } }
@@ -294,7 +295,7 @@ union {
 difference {
   union {
     union {
-      cylinder { sqrt(2)*z, -sqrt(2)*z, S*sqrt(2)-(S-1)*Wall_Thickness texture { Hull_T } }
+      cylinder { Module_Radius*z, -Module_Radius*z, S*Module_Radius-(S-1)*Wall_Thickness texture { Hull_T } }
       #for (i,0,1)                            
         object { Anchor_Extensions(S,sqrt(2),Anchor_T) rotate 180*i*z }                       
         object { Anchor_Extensions(S,sqrt(2),Anchor_T) rotate 180*y rotate 180*i*z }
@@ -312,7 +313,7 @@ difference {
     Point_Ring_Connection_Set(S,Hull_T,Anchor_T)
   }
   union {
-    cylinder { 2.1*z, -2.1*z, S*sqrt(2)-S*Wall_Thickness Reorient_Trans(z, <0,1,1>) }
+    cylinder { 2.1*z, -2.1*z, S*Module_Radius-S*Wall_Thickness Reorient_Trans(z, <0,1,1>) }
     Point_Ring_Negative(S)
     texture { Hull_T }
   }       
@@ -335,10 +336,10 @@ union {
 #macro Square_Ring_Negative(S)
 #local negrad = Connector_Radius - Wall_Thickness;
 union { 
-  cylinder { 0, Vertex_Vectors[0]*2*S negrad }
-  cylinder { 0, Vertex_Vectors[3]*2*S negrad }
-  cylinder { 0, Vertex_Vectors[4]*2*S negrad }
-  cylinder { 0, Vertex_Vectors[9]*2*S negrad }
+  cylinder { 0, Vertex_Vectors[0]*S*Module_Radius negrad }
+  cylinder { 0, Vertex_Vectors[3]*S*Module_Radius negrad }
+  cylinder { 0, Vertex_Vectors[4]*S*Module_Radius negrad }
+  cylinder { 0, Vertex_Vectors[9]*S*Module_Radius negrad }
 }
 #end
 
@@ -349,7 +350,7 @@ union {
     object { Cross_Plate }                                  
     object { Cross_Plate rotate 180*y }
     rotate 90*z
-    translate (S*sqrt(2)-Wall_Thickness)*x
+    translate (S*Module_Radius-Wall_Thickness)*x
     texture { Anchor_T }
   })
 }
@@ -358,7 +359,7 @@ union {
 #macro Square_Ring(S, Hull_T,Anchor_T)
 difference {
   union {
-    cylinder { 2*z, -2*z, S*sqrt(2)-(S-1)*Wall_Thickness texture { Hull_T } }
+    cylinder { 2*z, -2*z, S*Module_Radius-(S-1)*Wall_Thickness texture { Hull_T } }
     
     Square_Ring_Connection_Set(S,Hull_T,Anchor_T)
     #for (i,0,3)                            
@@ -367,7 +368,7 @@ difference {
     #end
   }
   union {
-    cylinder { 2.1*z, -2.1*z, S*sqrt(2)-S*Wall_Thickness }
+    cylinder { 2.1*z, -2.1*z, S*Module_Radius-S*Wall_Thickness }
     Square_Ring_Negative(S)
     texture { Hull_T }
   }       
@@ -388,10 +389,10 @@ union {
 #local negrad = Connector_Radius - Wall_Thickness;
 union {
   #for (i,0,5)               
-    cylinder { 0, Vertex_Vectors[i]*2*S, negrad }
+    cylinder { 0, Vertex_Vectors[i]*S*Module_Radius, negrad }
   #end
-  cylinder { 0, Vertex_Vectors[8]*2*S negrad }
-  cylinder { 0, Vertex_Vectors[9]*2*S negrad }
+  cylinder { 0, Vertex_Vectors[8]*S*Module_Radius negrad }
+  cylinder { 0, Vertex_Vectors[9]*S*Module_Radius negrad }
 }
 #end
 
@@ -399,8 +400,8 @@ union {
 union {
   Square_Cap_Vertices(Connector_Cylinder(S,Hull_T))
   intersection {
-    Square_Cap_Vertices(object { Anchor_Ring rotate 90*z translate (S*sqrt(2)-Wall_Thickness)*x texture { Anchor_T } })
-    cylinder { (S*sqrt(2)+1)*z, -0.025*z, S*sqrt(2)+1 }
+    Square_Cap_Vertices(object { Anchor_Ring rotate 90*z translate (S*Module_Radius-Wall_Thickness)*x texture { Anchor_T } })
+    cylinder { (S*Module_Radius+1)*z, -0.025*z, S*Module_Radius+1 }
   }
   #for (i,0,3)                            
     object { Anchor_Extensions(S,2,Anchor_T) rotate (45+90*i)*z }
@@ -420,10 +421,10 @@ union {
 #macro Square_Ring_Negative(S)
 #local negrad = Connector_Radius - Wall_Thickness;
 union { 
-  cylinder { 0, Vertex_Vectors[0]*2*S negrad }
-  cylinder { 0, Vertex_Vectors[3]*2*S negrad }
-  cylinder { 0, Vertex_Vectors[4]*2*S negrad }
-  cylinder { 0, Vertex_Vectors[9]*2*S negrad }
+  cylinder { 0, Vertex_Vectors[0]*S*Module_Radius negrad }
+  cylinder { 0, Vertex_Vectors[3]*S*Module_Radius negrad }
+  cylinder { 0, Vertex_Vectors[4]*S*Module_Radius negrad }
+  cylinder { 0, Vertex_Vectors[9]*S*Module_Radius negrad }
 }
 #end
 
@@ -434,7 +435,7 @@ union {
     object { Cross_Plate }                                  
     object { Cross_Plate rotate 180*y }
     rotate 90*z
-    translate (S*sqrt(2)-0.05)*x
+    translate (S*Module_Radius-0.05)*x
     texture { Anchor_T }
   })
 }
@@ -443,7 +444,7 @@ union {
 #macro Square_Ring(S, Hull_T,Anchor_T)
 difference {
   union {
-    cylinder { 2*z, -2*z, S*sqrt(2)-(S-1)*Wall_Thickness texture { Hull_T } }
+    cylinder { 2*z, -2*z, S*Module_Radius-(S-1)*Wall_Thickness texture { Hull_T } }
     
     Square_Ring_Connection_Set(S,Hull_T,Anchor_T)
     #for (i,0,3)                            
@@ -452,7 +453,7 @@ difference {
     #end
   }
   union {
-    cylinder { 2.1*z, -2.1*z, S*sqrt(2)-S*Wall_Thickness }
+    cylinder { 2.1*z, -2.1*z, S*Module_Radius-S*Wall_Thickness }
     Square_Ring_Negative(S)
     texture { Hull_T }
   }       
@@ -460,7 +461,7 @@ difference {
 #end
 
 #macro Sphere_Cap(S,L,Hull_T)
-#local r = S*sqrt(2)-((S-1)*Wall_Thickness);
+#local r = S*Module_Radius-((S-1)*Wall_Thickness);
 union {
   intersection {
     sphere { 0, r }
@@ -472,7 +473,7 @@ union {
 #end
 
 #macro Sphere_Cap_Negative(S,L)
-#local r = S*sqrt(2)-((S-1)*Wall_Thickness);
+#local r = S*Module_Radius-((S-1)*Wall_Thickness);
 union {
   sphere { 0, r-Wall_Thickness }
   cylinder { 0, -(L+.Wall_Thickness)*x, r-Wall_Thickness }

@@ -6,8 +6,8 @@
 #macro Corridor(S, Hull_T, Anchor_T)
 
 #local Interconnectors = union {
-  #local rx = S*Module_Radius-Wall_Thickness;
-  #local ry = Anchor_Ring_Radius + Intersection_Radius;
+  #local rx = S*Module_Radius - Wall_Thickness - Intersection_Radius/sqrt(2);
+  #local ry = Anchor_Ring_Radius + Intersection_Radius/sqrt(2);
   
   #local sx = S*Module_Radius - 0.5*Connector_Radius - 2*Wall_Thickness ;
   #local sy = Anchor_Ring_Radius + 0.5*Connector_Radius;

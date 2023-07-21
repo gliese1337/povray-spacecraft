@@ -24,5 +24,5 @@ light_source { < 140,200,-300> rgb <0.9, 0.9, 1.00>*0.9 shadowless }
 #declare Anchor_T = texture { pigment { Copper } }                                                        
                      
 object { Cone_Cell(1,Hull_T,Anchor_T) rotate 15*x rotate 15*y translate <-6, 0, 0> } 
-object { Raspberry(Cone_Cell(1,Hull_T,Anchor_T),1) rotate 15*x rotate 15*y }
+//object { Raspberry(Cone_Cell(1,Hull_T,Anchor_T),1) rotate 15*x rotate 15*y }
 object { Cone_Cell(3,Hull_T,Anchor_T) rotate 15*x rotate 15*y translate <10, 0, 0>  }

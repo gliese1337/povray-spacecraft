@@ -28,40 +28,37 @@ mesh2 {
 #end  
 
 #macro RD_Cell(S, Hull_T, Anchor_T)
-#local Interconnectors = union {
-  #local rh = S*Module_Radius-Wall_Thickness;
-  #local rm = rh*2/sqrt(3);
-  #local ra = Anchor_Ring_Radius + Intersection_Radius;
+#local rh = ICX(S);
+#local ra = ICY;
+#local rm = rh*2/sqrt(3);
+#local spoint = <rh, ra, 0>; 
+#local epoint = vaxis_rotate((rm-0.03)*x, z, 30);               
+#local mpoint = <rh, -2*(rh-epoint.x)+epoint.y, 0>;
+#local arrow = (mpoint - spoint)/S;
   
-  #local spoint = <rh, ra, 0>;
-  
-  #local epoint = vaxis_rotate((rm-0.03)*x, z, 30);               
-  #local mpoint = <rh, -2*(rh-epoint.x)+epoint.y, 0>;
-  #local arrow = (mpoint - spoint)/S;
-    
-  #local flange = box {
-    <0, Flange_Length/2, Flange_Width/2>,
-    <-0.2, -Flange_Length/2, -Flange_Width/2>
-  }
-  #local bar = union {
-    // straight section                                                                     
-    cylinder { spoint, mpoint, Anchor_Radius }
-    sphere { mpoint, Anchor_Radius }
-    #for (i,1,S-1)                                                                      
-      object { flange translate spoint + i*arrow }
-    #end
-    // corner section
-    union {
-      cylinder { mpoint, epoint, Anchor_Radius }
-      object { flange rotate 30*z translate epoint }
-    }  
-  }
-    
+#local flange = box {
+  <0, Flange_Length/2, Flange_Width/2>,
+  <-0.2, -Flange_Length/2, -Flange_Width/2>
+}
+
+#local bar = union {
+  // straight section                                                                     
+  cylinder { spoint, mpoint, Anchor_Radius }
+  sphere { mpoint, Anchor_Radius }
+  #for (i,1,S-1)                                                                      
+    object { flange translate spoint + i*arrow }
+  #end
+  // corner section
   union {
-    #for (i,0,3)
-      object { bar rotate (90+Edge_Angles[i])*x }
-    #end
-  }
+    cylinder { mpoint, epoint, Anchor_Radius }
+    object { flange rotate 30*z translate epoint }
+  }  
+}
+
+#local Interconnectors = union {
+  #for (i,0,3)
+    object { bar rotate (90+Edge_Angles[i])*x }
+  #end
   texture { Anchor_T } 
 }
 

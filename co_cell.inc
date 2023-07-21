@@ -34,27 +34,28 @@ mesh2 {
 #end
 
 #macro CO_Interconnectors(S,Anchor_T)
+#local rh = ICX(S);
+#local ra = ICY;
+#local spoint = <rh, ra, 0>;
+#local rr = vlength(spoint);
+#local epoint = (spoint + vaxis_rotate(<rh, -ra, 0>, z, 60))/2;
+#local arrow = (epoint - spoint)/S;
+
+#local flange = box {
+  <0, Flange_Length/2, Flange_Width/2>,
+  <-0.2, -Flange_Length/2, -Flange_Width/2>
+  rotate 30*z
+  translate spoint
+}
+
+#local bar = union {
+  cylinder { spoint, epoint, Anchor_Radius }
+  #for (i,1,S)                                                                      
+    object { flange translate i*arrow }
+  #end
+}
+
 union {
-  #local rh = S*Module_Radius-Wall_Thickness;
-  #local ra = Anchor_Ring_Radius + Intersection_Radius;
-  #local rr = sqrt(rh*rh+ra*ra);
-  #local spoint = <rh, ra, 0>;
-  #local epoint = (spoint + vaxis_rotate(<rh, -ra, 0>, z, 60))/2;
-    
-  #local arrow = (epoint - spoint)/S;
-  #local flange = box {
-    <0, Flange_Length/2, Flange_Width/2>,
-    <-0.2, -Flange_Length/2, -Flange_Width/2>
-    rotate 30*z
-    translate spoint
-  }
-  #local bar = union {
-    cylinder { spoint, epoint, Anchor_Radius }
-    #for (i,1,S)                                                                      
-      object { flange translate i*arrow }
-    #end
-  }
-  
   #for (i,0,3)
     object { bar rotate (90+Edge_Angles[i])*x }
   #end

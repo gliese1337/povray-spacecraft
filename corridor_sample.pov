@@ -9,7 +9,7 @@
 
 camera {  
   orthographic
-  location <7,7,7>
+  location <0,0,4>
   angle 0 // direction 2*z 
   right     x*image_width/image_height // keep proportions with any aspect ratio
   look_at 0
@@ -22,5 +22,5 @@ light_source { < 140,200,-300> rgb <0.9, 0.9, 1.00>*0.9 shadowless }
 #declare Hull_T = texture { pigment { Grey } }
 #declare Anchor_T = texture { pigment { Copper } }                                                             
                     
-object { Corridor(2,Hull_T,Anchor_T) translate Module_Radius*x }                    
-object { Sphere_Cell(1,Hull_T,Anchor_T) rotate 45*y translate -2*Module_Radius*x }
+object { Corridor(1,Hull_T,Anchor_T) translate Module_Radius*x }                    
+object { Sphere_Cell(1,Hull_T,Anchor_T) rotate 45*y translate -Module_Radius*x }

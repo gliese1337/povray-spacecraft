@@ -9,7 +9,10 @@
 #declare Anchor_Offset = 0.1;
 #declare Anchor_Ring_Radius = Connector_Radius + Anchor_Offset;
 #declare Intersection_Radius = 0.025;
-#declare Cross_Plate_Offset = 0.605; // TODO: Calculate this dynamically
+
+#undef ICX
+#declare ICX = function (S) { S*Module_Radius - Wall_Thickness - Intersection_Radius/sqrt(2) }
+#declare ICY = Anchor_Ring_Radius + Intersection_Radius/sqrt(2);
 
 #declare Intersection_Plate = union {
   cylinder { -Flange_Width/2*y, Flange_Width/2*y, Intersection_Radius }
@@ -46,14 +49,28 @@ union {
     #end 
   }
   
+  #local flange = box {
+     <Connector_Radius-0.025, -Flange_Width/2, -Flange_Length/2>,
+     <Anchor_Ring_Radius, Flange_Width/2, Flange_Length/2>
+     rotate (i*90+22.5)*y
+  }
+  
   #for (i,0,3)                                                                      
-    object { Intersection_Plate rotate -.4*y translate (Anchor_Ring_Radius-0.0002)*z rotate Edge_Angles[i]*y}
-    cylinder { (Connector_Radius-0.01)*z, (Anchor_Ring_Radius-Intersection_Radius)*z, Anchor_Radius rotate Edge_Angles[i]*y }
-    box {
-       <Connector_Radius-0.025, -Flange_Width/2, -Flange_Length/2>,
-       <Anchor_Ring_Radius, Flange_Width/2, Flange_Length/2>
-       rotate i*90*y
+    object {
+      Intersection_Plate
+      rotate -.4*y
+      rotate -45*x
+      translate (Anchor_Ring_Radius-0.0002)*z
+      rotate Edge_Angles[i]*y
     }
+    cylinder {
+      <0,-Intersection_Radius/sqrt(2),(Anchor_Ring_Radius-Intersection_Radius/sqrt(2))>,
+      <0,-Wall_Thickness,(Anchor_Ring_Radius-Intersection_Radius/sqrt(2))>,
+      Anchor_Radius
+      rotate Edge_Angles[i]*y
+    }
+    object { flange rotate (i*90+45)*y }
+    object { flange rotate (i*90)*y }
   #end
   
   rotate 90*z

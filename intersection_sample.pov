@@ -8,7 +8,7 @@
 
 camera {  
   orthographic
-  location <0,0,0.7>
+  location <2,0,0>
   angle 0 // direction 2*z 
   right     x*image_width/image_height // keep proportions with any aspect ratio
   look_at 0

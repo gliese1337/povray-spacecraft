@@ -34,12 +34,6 @@
   #end
 }
 
-#declare Cross_Plate = union {                                                            
-  object { Intersection_Plate rotate 90*x translate Anchor_Ring_Radius*z }
-  cylinder { <0, 0.5, Anchor_Ring_Radius>, <0, Intersection_Radius, Anchor_Ring_Radius>, Anchor_Radius }
-  cylinder { <0, -0.05, Anchor_Ring_Radius>, <0, Intersection_Radius, Anchor_Ring_Radius>, Anchor_Radius }
-}
-
 #declare Edge_Angles = array[4] { Connector_Angle, 180 - Connector_Angle, -Connector_Angle,  Connector_Angle - 180 }
 
 #macro Anchor_Ring(S,Anchor_T)
@@ -49,19 +43,18 @@ union {
     torus { Anchor_Ring_Radius Anchor_Radius }
     #for (i,0,3)                               
      object { Wedge(isect_angle) rotate (Edge_Angles[i]-(isect_angle/2))*y }
-    #end
-         
-    object { Wedge(isect_angle) rotate -(isect_angle/2)*y rotate 0*y }
-    object { Wedge(isect_angle) rotate -(isect_angle/2)*y rotate 180*y } 
+    #end 
   }
   
   #for (i,0,3)                                                                      
     object { Intersection_Plate rotate -.4*y translate (Anchor_Ring_Radius-0.0002)*z rotate Edge_Angles[i]*y}
     cylinder { (Connector_Radius-0.01)*z, (Anchor_Ring_Radius-Intersection_Radius)*z, Anchor_Radius rotate Edge_Angles[i]*y }
+    box {
+       <Connector_Radius-0.025, -Flange_Width/2, -Flange_Length/2>,
+       <Anchor_Ring_Radius, Flange_Width/2, Flange_Length/2>
+       rotate i*90*y
+    }
   #end
-                                                          
-  object { Cross_Plate }                                  
-  object { Cross_Plate rotate 180*y }
   
   rotate 90*z
   translate (S*Module_Radius-Wall_Thickness)*x

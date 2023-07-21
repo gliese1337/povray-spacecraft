@@ -1,5 +1,7 @@
+#include "transforms.inc"
+#include "shapes.inc"
+
 #declare Connector_Angle = 54.7356103;
-//#declare Connector_Height = 0.083;
 #declare Connector_Radius = 1;
 #declare Module_Radius = 2*sqrt(2);
 #declare Wall_Thickness = 0.05;

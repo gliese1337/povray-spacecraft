@@ -2,8 +2,7 @@
 
 #include "./cell_basics.inc"
 
-#macro Cuboctahedron(S)
-mesh2 {
+#declare Cuboctahedron = mesh2 {
   vertex_vectors {
     12, 
     < 1, 1, 0>, < 1, 0, 1>, < 0, 1, 1>, // 0, 1, 2
@@ -29,9 +28,17 @@ mesh2 {
     < 7, 8, 9>, < 9,10,11>,
   }
   inside_vector z
-  scale S
+  scale 1/sqrt(2)
 }
-#end
+
+#declare Conoctahedron = union {
+  intersection {
+    #for(i,0,11)
+      cone { Vertex_Vectors[i], 0, -Vertex_Vectors[i], 5 }
+    #end
+  }
+  scale 1/sqrt(2)       
+}
 
 #macro CO_Interconnectors(S,Anchor_T)
 #local rh = ICX(S);
@@ -62,43 +69,28 @@ union {
   texture { Anchor_T } 
 }
 #end
-  
-#macro CO_Cell(S, Hull_T, Anchor_T)
+
+#declare coscalefn = function (S) { S*Module_Radius + Connector_Radius/2 }
+
+#macro _vertex_cell(T, S, Hull_T, Anchor_T)
 difference {
   union {
-    object { Cuboctahedron(S*Module_Radius*0.85 - Wall_Thickness) texture { Hull_T } }
+    object { T scale coscalefn(S) texture { Hull_T } }
     Connection_Set(S,Hull_T,Anchor_T)   
     Place_At_Vertices(CO_Interconnectors(S,Anchor_T))
   }
   union {
     object{ Cell_Negative(S) }
-    object { Cuboctahedron(S*Module_Radius*0.85 - 2*Wall_Thickness) }
+    object { T scale coscalefn(S) - Wall_Thickness }
     texture { Hull_T }
-  }       
-}
-#end 
-
-#macro Conoctahedron(S)
-union {
-  intersection {
-    #for(i,0,11)
-      cone { S*Vertex_Vectors[i], 0, -S*Vertex_Vectors[i], 5*S }
-    #end
   }       
 }
 #end
+  
+#macro CO_Cell(S, Hull_T, Anchor_T)
+_vertex_cell(Cuboctahedron, S, Hull_T, Anchor_T)
+#end 
 
 #macro Cone_Cell(S, Hull_T, Anchor_T)
-difference {
-  union {
-    object { Conoctahedron(S*Module_Radius*0.85 - 1.5*Wall_Thickness) texture { Hull_T } }
-    Connection_Set(S,Hull_T,Anchor_T)
-    Place_At_Vertices(CO_Interconnectors(S,Anchor_T))
-  }
-  union {
-    Cell_Negative(S)
-    object { Conoctahedron(S*Module_Radius*0.85 - 2.5*Wall_Thickness) }
-    texture { Hull_T }
-  }       
-}
+_vertex_cell(Conoctahedron, S, Hull_T, Anchor_T)
 #end

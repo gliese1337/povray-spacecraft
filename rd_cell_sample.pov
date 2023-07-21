@@ -1,9 +1,6 @@
 #version 3.6;
 
-#include "colors.inc"
-#include "functions.inc"
-#include "transforms.inc"
-#include "shapes.inc"      
+#include "colors.inc"      
 #include "./cell_basics.inc"
 #include "./rd_cell.inc"
 

@@ -493,20 +493,22 @@ union {
 #end
 
 #macro Raspberry(C,S)
+#local o = sqrt(2)*S*Module_Radius;
 union {
   object { C }
   #for (i,0,11)                   
-    object { C translate 2*S*Vertex_Vectors[i] }
+    object { C translate o*Vertex_Vectors[i] }
   #end
 }                                                                       
 #end
 
 #macro Triangle(C,S)
+#local o = sqrt(2)*S*Module_Radius;
 union {
   #for (i,0,2)                   
-    object { C translate 2*S*Vertex_Vectors[i] }
+    object { C translate o*Vertex_Vectors[i] }
   #end
-  translate -sqrt(2)
+  translate -o
 }                                                                       
 #end
 
@@ -514,29 +516,32 @@ union {
 // Conical tetrahedron
 // Spherical tetrahedron
 #macro Tetrahedron(C,S)
+#local o = sqrt(2)*S*Module_Radius;
 union {
   object { C }
   #for (i,0,2)                   
-    object { C translate 2*S*Vertex_Vectors[i] }
+    object { C translate o*Vertex_Vectors[i] }
   #end
-  translate -1
+  translate -Module_Radius
 }                                                                       
 #end
 
 #macro Hexagon(C,S)
+#local o = sqrt(2)*S*Module_Radius;
 union {
   #for (i,3,8)                   
-    object { C translate 2*S*Vertex_Vectors[i] }
+    object { C translate o*Vertex_Vectors[i] }
   #end
 }                                                                       
 #end
 
 #macro Square(C,S)
+#local o = sqrt(2)*S*Module_Radius;
 union {                             
-  object { C translate 2*S*< 1, 0, 0> }
-  object { C translate 2*S*<-1, 0, 0> }
-  object { C translate 2*S*< 0, 0, 1> }
-  object { C translate 2*S*< 0, 0,-1> }
+  object { C translate < o, 0, 0> }
+  object { C translate <-o, 0, 0> }
+  object { C translate < 0, 0, o> }
+  object { C translate < 0, 0,-o> }
 }                                                                       
 #end
 
@@ -545,22 +550,24 @@ union {
 // Conical octahedron
 // Spherical octahedron
 #macro Octahedron(C,S)
+#local o = sqrt(2)*S*Module_Radius;
 union {
-  object { C translate 2*S*< 1, 0, 0> }
-  object { C translate 2*S*<-1, 0, 0> }                             
-  object { C translate 2*S*< 0, 1, 0> }
-  object { C translate 2*S*< 0,-1, 0> }
-  object { C translate 2*S*< 0, 0, 1> }
-  object { C translate 2*S*< 0, 0,-1> }
+  object { C translate < o, 0, 0> }
+  object { C translate <-o, 0, 0> }                             
+  object { C translate < 0, o, 0> }
+  object { C translate < 0,-o, 0> }
+  object { C translate < 0, 0, o> }
+  object { C translate < 0, 0,-o> }
 }                                                                       
 #end
 
 #macro Cross(C,S)
+#local o = sqrt(2)*S*Module_Radius;
 union {
   object { C }                             
-  object { C translate 2*S*< 1, 0, 1> }
-  object { C translate 2*S*<-1, 0,-1> }
-  object { C translate 2*S*< 1, 0,-1> }
-  object { C translate 2*S*<-1, 0, 1> }
+  object { C translate < o, 0, o> }
+  object { C translate <-o, 0,-o> }
+  object { C translate < o, 0,-o> }
+  object { C translate <-o, 0, o> }
 }                                                                       
 #end

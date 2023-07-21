@@ -20,7 +20,7 @@
   #for (i,1,S-1)                                                                      
     #local epoint = vaxis_rotate(rr*x, z, 30*(i/S));                                                                       
     cylinder { spoint, epoint, Anchor_Radius }
-    object { flange rotate 30*(j/S)*z }
+    object { flange rotate 30*(i/S)*z }
     #local spoint = epoint;
   #end
   #local epoint = vaxis_rotate(rr*x, z, 30);
